@@ -11,3 +11,95 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
 fi
 
 # Customize to your needs...
+
+set -o vi
+
+fpath=(~/git-completion.zsh $fpath)
+
+#source /usr/local/etc/bash_completion.d/git-flow-completion.bash
+source ~/Documents/repositories/bitbucket/clario/dev-helpers/ninja-sa/ninja_cloud_sa.sh
+
+switch-creds preprod
+
+### EXPORT
+export DEV_HELPERS_HOME='/Users/chrisalme/Documents/repositories/bitbucket/clario/dev-helpers'
+
+### ALIAS
+alias es-prod-proxy='switch-creds prod;$DEV_HELPERS_HOME/aws-es-proxy/aws-es-proxy.js'
+alias sammy='$DEV_HELPERS_HOME/sammy/sammy.sh'
+alias repo='cd ~/Documents/repositories'
+alias work='cd ~/Documents/repositories/bitbucket/clario'
+alias workbench='cd ~/Documents/repositories/bitbucket/workbench'
+alias c4='cd ~/Documents/repositories/bitbucket/clario/c4'
+alias pnix='cd ~/Documents/repositories/bitbucket/clario/phoenix'
+alias mvn='mvn -U'
+alias mci='mvn clean install'
+alias mcp='mvn clean package'
+alias mdt='mvn dependency:tree'
+alias mep='mvn help:effective-pom'
+alias m2='export M2_HOME=~/Applications/apache-maven-2.2.1;$M2_HOME/bin/mvn'
+alias m3='export M2_HOME="`brew --prefix maven`/libexec";$M2_HOME/bin/mvn'
+alias m3ci='m3 clean install'
+
+
+function beerme() {
+  echo "====> Updating Homebrew..."
+  brew update
+  echo "====> Upgrading Installed Bevvys..."
+  brew upgrade
+  echo "====> Updating Homebrew Cask..."
+  brew upgrade caskroom/cask/brew-cask
+  echo "====> Cleaning up..."
+  brew cleanup
+  echo "====> Calling the doctor..."
+  brew doctor
+}
+
+function api-pinhole() {
+  local env=$1
+  local action=$2
+  local group_id
+  if [ -z $env ] || [ -z $action ]
+  then
+      echo "Argument needed"
+      echo "api-pinhole <env> <open|close>"
+  else
+    case $env in
+      dev)
+        group_id="sg-43d84d39"
+      ;;
+      qa)
+        group_id="sg-7c04c106"
+      ;;
+      prod)
+        group_id="sg-6b78fe11"
+      ;;
+    esac
+    case $action in
+     open)
+       switch-creds $env
+       echo "Authorizing $env API ingress from HQ"
+       aws ec2 authorize-security-group-ingress --group-id $group_id --protocol tcp --port 80 --source-group sg-3d374a59       #aws ec2 authorize-security-group-ingress --group-id $group_id --protocol tcp --port 80 --cidr 192.168.10.0/24
+       if [ $? -eq 0  ];
+       then
+         echo "Authorized"
+       else
+         echo "Authorization failed"
+       fi
+     ;;
+     close)
+       switch-creds $env
+       echo "Revoking $env API ingress from HQ"
+       aws ec2 revoke-security-group-ingress --group-id $group_id --protocol tcp --port 80 --source-group sg-3d374a59
+       #aws ec2 revoke-security-group-ingress --group-id $group_id --ip-permissions '[{"IpProtocol": "tcp", "FromPort": 80, "ToPort": 80, "IpRanges": [{"CidrIp": "192.168.10.0/24"}]}]'
+       if [ $? -eq 0  ];
+       then
+         echo "Revoked"
+       else
+         echo "Revocation failed"
+       fi
+     ;;
+    esac
+  fi
+}
+
