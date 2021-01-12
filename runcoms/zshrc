@@ -20,12 +20,25 @@ fpath=(~/git-completion.zsh $fpath)
 source ~/Documents/repositories/bitbucket/clario/dev-helpers/ninja-sa/ninja_cloud_sa.sh
 
 switch-creds preprod
+switch-java 11
 
 ### EXPORT
 export DEV_HELPERS_HOME='/Users/chrisalme/Documents/repositories/bitbucket/clario/dev-helpers'
+export CLOUDFORMER_SOURCE_PATH=~/Documents/repositories/bitbucket/clario/cloudformer
+#export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
+export CLOUDSDK_PYTHON=python3
+export GOOGLE_APPLICATION_CREDENTIALS='/Users/chrisalme/.google/credentials.json'
+
+export PATH=.:$CLOUDFORMER_SOURCE_PATH/bin:$PATH
 
 ### ALIAS
-alias es-prod-proxy='switch-creds prod;$DEV_HELPERS_HOME/aws-es-proxy/aws-es-proxy.js'
+#alias es-prod-proxy='switch-creds prod;$DEV_HELPERS_HOME/aws-es-proxy/aws-es-proxy.js'
+#alias es-dev-proxy='switch-creds dev;$DEV_HELPERS_HOME/aws-es-proxy/aws-es-proxy.js -d -h search.dev.clario.us'
+#alias es-qa-proxy='switch-creds qa;$DEV_HELPERS_HOME/aws-es-proxy/aws-es-proxy.js -d -h search.qa.clario.us'
+alias es-dev-proxy="switch-creds dev;aws-es-proxy -endpoint https://`nslookup search.dev.clario.us | grep -m 1 'Name:' | awk '{print $2}'`"
+alias es-qa-proxy="switch-creds qa;aws-es-proxy -endpoint https://`nslookup search.qa.clario.us | grep -m 1 'Name:' | awk '{print $2}'`"
+alias es-prod-proxy="switch-creds prod;aws-es-proxy -endpoint https://`nslookup search.prod.clario.us | grep -m 1 'Name:' | awk '{print $2}'`"
+
 alias sammy='$DEV_HELPERS_HOME/sammy/sammy.sh'
 alias repo='cd ~/Documents/repositories'
 alias work='cd ~/Documents/repositories/bitbucket/clario'
@@ -40,6 +53,7 @@ alias mep='mvn help:effective-pom'
 alias m2='export M2_HOME=~/Applications/apache-maven-2.2.1;$M2_HOME/bin/mvn'
 alias m3='export M2_HOME="`brew --prefix maven`/libexec";$M2_HOME/bin/mvn'
 alias m3ci='m3 clean install'
+alias repoman-crawler='$DEV_HELPERS_HOME/repoman-crawler/repoman-crawler.groovy'
 
 
 function beerme() {
@@ -47,12 +61,23 @@ function beerme() {
   brew update
   echo "====> Upgrading Installed Bevvys..."
   brew upgrade
-  echo "====> Updating Homebrew Cask..."
-  brew upgrade caskroom/cask/brew-cask
+  #echo "====> Updating Homebrew Cask..."
+  #brew upgrade caskroom/cask/brew-cask
   echo "====> Cleaning up..."
   brew cleanup
   echo "====> Calling the doctor..."
   brew doctor
+}
+
+function switch-java() {
+  local version=$1
+  if [[ $version -eq 8 ]]
+  then
+      version=1.8
+  fi
+  unset JAVA_HOME
+  export JAVA_HOME=$(/usr/libexec/java_home -v $version)
+  java -version
 }
 
 function api-pinhole() {
@@ -79,7 +104,8 @@ function api-pinhole() {
      open)
        switch-creds $env
        echo "Authorizing $env API ingress from HQ"
-       aws ec2 authorize-security-group-ingress --group-id $group_id --protocol tcp --port 80 --source-group sg-3d374a59       #aws ec2 authorize-security-group-ingress --group-id $group_id --protocol tcp --port 80 --cidr 192.168.10.0/24
+       aws ec2 authorize-security-group-ingress --group-id $group_id --protocol tcp --port 80 --source-group sg-3d374a59
+       #aws ec2 authorize-security-group-ingress --group-id $group_id --protocol tcp --port 80 --cidr 192.168.10.0/24
        if [ $? -eq 0  ];
        then
          echo "Authorized"
@@ -102,4 +128,15 @@ function api-pinhole() {
     esac
   fi
 }
+
+# pyenv
+if command -v pyenv 1>/dev/null 2>&1; then
+  eval "$(pyenv init -)"
+fi
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/chrisalme/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/chrisalme/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/chrisalme/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/chrisalme/google-cloud-sdk/completion.zsh.inc'; fi
 
