@@ -20,7 +20,6 @@ fpath=(~/git-completion.zsh $fpath)
 source ~/Documents/repositories/bitbucket/clario/dev-helpers/ninja-sa/ninja_cloud_sa.sh
 
 switch-creds preprod
-switch-java 11
 
 ### EXPORT
 export DEV_HELPERS_HOME='/Users/chrisalme/Documents/repositories/bitbucket/clario/dev-helpers'
@@ -79,6 +78,8 @@ function switch-java() {
   export JAVA_HOME=$(/usr/libexec/java_home -v $version)
   java -version
 }
+
+switch-java 11
 
 function api-pinhole() {
   local env=$1
