@@ -26,7 +26,7 @@ export DEV_HELPERS_HOME='/Users/chrisalme/Documents/repositories/bitbucket/clari
 export CLOUDFORMER_SOURCE_PATH=~/Documents/repositories/bitbucket/clario/cloudformer
 #export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
 export CLOUDSDK_PYTHON=python3
-export GOOGLE_APPLICATION_CREDENTIALS='/Users/chrisalme/.google/credentials.json'
+#export GOOGLE_APPLICATION_CREDENTIALS='/Users/chrisalme/.google/credentials.json'
 
 export PATH=.:$CLOUDFORMER_SOURCE_PATH/bin:$PATH
 
@@ -68,6 +68,27 @@ function beerme() {
   brew doctor
 }
 
+function repoman() {
+  local op=$1
+  local dir=`pwd`
+
+  local settings=$HOME/.m2/settings.xml.repoman
+  local repository=$HOME/.m2/repoman-repository
+  case $op in
+    install)
+      echo "Installing project dependencies for project:\n$dir\n\nwith settings:\n$settings\n\nto repository:\n$repository\n"
+      mvn -s $settings -Dmaven.repo.local=$repository clean dependency:sources install
+    ;;
+    crawl)
+      echo "Crawling and installing from repository:\n$repository\n"
+      repoman-crawler $repository
+    ;;
+    *)
+      echo "Usage: repoman install|crawl"
+    ;;
+  esac
+}
+
 function switch-java() {
   local version=$1
   if [[ $version -eq 8 ]]
@@ -78,6 +99,17 @@ function switch-java() {
   export JAVA_HOME=$(/usr/libexec/java_home -v $version)
   java -version
 }
+
+function switch-repoman-settings() {
+  if [[ $1 == "on" ]]
+  then
+    ln -sf ~/.m2/settings.xml.repoman ~/.m2/settings.xml
+  else
+    ln -sf ~/.m2/settings.xml.clario ~/.m2/settings.xml
+  fi
+  ll ~/.m2/settings.xml
+}
+
 
 switch-java 11
 
